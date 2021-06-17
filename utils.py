@@ -1,12 +1,15 @@
 from datetime import datetime
 from enum import Enum
-from urllib.error import HTTPError
+from typing import Tuple, List
 
 import pandas as pd
-from pandas.errors import ParserError
 from pathlib import Path
 import urllib.request
-import bs4
+from jax import numpy as jnp
+
+from schemas import MatchLineup
+
+
 class League(Enum):
     premier = "E0"
     championship = "E1"
@@ -43,11 +46,19 @@ def load_all_data():
             except Exception:
                 print(f"Failed for {season} - {league}")
 
-def parse_lineup(url:str):
-    page = bs4.BeautifulSoup()
+def lineups_to_array(match_lineups: List[MatchLineup]) -> Tuple[jnp.array, jnp.array, jnp.array, jnp.array]:
+    home_players = []
+    home_scores = []
+    away_players = []
+    away_scores = []
+    for lineup in match_lineups:
+        home_scores.append(lineup.home_score)
+        away_scores.append(lineup.away_score)
+        home_players.append([p.player_id for p in lineup.home_team.lineup][0:11])
+        away_players.append([p.player_id for p in lineup.away_team.lineup][0:11])
+    return jnp.array(home_players), jnp.array(away_players), jnp.array(home_scores), jnp.array(away_scores)
 
 
-import sqlite3
 
-db = sqlite3.
+
 
