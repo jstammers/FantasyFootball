@@ -1,0 +1,24 @@
+---
+title: Player Explorer
+format: dashboard
+server: shiny
+---
+
+## {.sidebar}
+
+```{python}
+from shiny.express import render, ui
+import pandas as pd
+import duckdb
+from pathlib import Path
+data_dir = Path("data/FBRef_parsed/big5")
+db = duckdb.connect()
+for f in data_dir.glob("*.csv"):
+    table_name = f.stem
+    df = pd.read_csv(f)
+    db.register(table_name, df)
+ui.input_select("x", "Variable:",
+                choices=["bill_length_mm", "bill_depth_mm"])
+ui.input_select("dist", "Distribution:", choices=["hist", "kde"])
+ui.input_checkbox("rug", "Show rug marks", value = False)
+```

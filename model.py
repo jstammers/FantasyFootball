@@ -57,11 +57,11 @@ def player_score_model(home_players, away_players, N_players:int, home_score=Non
 	stats = npyr.sample("player_stats", dist.MultivariateNormal(0, cov).expand([N_players]))
 	delta = npyr.sample("home_advantage", dist.Normal(0, 1))
 	gamma = npyr.sample("score_mixing", dist.Normal(0, 1))
-	with npyr.plate("matches", home_players.shape[1]):
-		home_attack = stats[0, home_players].sum(axis=0)
-		home_defense = stats[1, home_players].sum(axis=0)
-		away_attack = stats[0, away_players].sum(axis=0)
-		away_defense = stats[1, away_players].sum(axis=0)
+	with npyr.plate("matches", home_players.shape[0]):
+		home_attack = stats[0, home_players].sum(axis=1)
+		home_defense = stats[1, home_players].sum(axis=1)
+		away_attack = stats[0, away_players].sum(axis=1)
+		away_defense = stats[1, away_players].sum(axis=1)
 		ScoreModel(home_attack, home_defense, away_attack, away_defense, home_advantage=delta, score_mixing=gamma, scores=(home_score, away_score))
 
 

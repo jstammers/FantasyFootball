@@ -8,8 +8,7 @@ from typing import List
 from sqlite_utils import Database
 import json
 from schemas import Match, Lineup, MatchLineup, Season, Competition
-import pandas as pd
-import xarray
+from itertools import chain
 def insert_match(db:Database, match: Match):
 	db['matches'].insert(match.dict())
 	pass
@@ -18,20 +17,6 @@ def insert_lineup(db:Database, lineup: Lineup, match_id:int ):
 	l = lineup.dict()
 	l['match_id'] = match_id
 	db['lineups'].insert(l)
-
-def get_lineups(db: Database) -> List[MatchLineup]:
-	result = db.execute("""SELECT 
-       l.home_team, 
-       l.away_team,
-       home_score,
-       away_score,
-       season,
-       competition
-FROM matches
-         left join lineups l on matches.match_id = l.match_id;""").fetchall()
-	return [MatchLineup(home_team=Lineup.parse_raw(match[0]), away_team=Lineup.parse_raw(match[1]), home_score=match[2], away_score=match[3],
-		                     season=Season.parse_raw(match[4]), competition=Competition.parse_raw(match[5])) for match in result]
-
 
 
 if __name__ == '__main__':
