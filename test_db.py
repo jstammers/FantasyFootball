@@ -1,11 +1,7 @@
-import pandas as pd
-import duckdb
-from pathlib import Path
-data_dir = Path("data/FBRef_parsed/big5")
-db = duckdb.connect()
-for f in data_dir.iterdir():
-    table_name = f.stem
-    print(table_name)
-    df = pd.read_csv(f)
-    db.register(table_name, df)
 
+
+df.drop(columns=["Unnamed: 0"], inplace=True)
+df.to_csv("data/FBRef_parsed/big5/match_results.csv", index=False)
+
+stats = ['Competition_Name', 'Gender', "Country", "Season_End_Year", "Wk"]
+combs = pd.MultiIndex.from_product([df[x].unique() for x in stats]).sort_values()

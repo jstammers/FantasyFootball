@@ -217,3 +217,6 @@ for (tier in c("2nd","3rd", "4th", "5th")){
 }
 
 match_results <- fb_match_results(season_end_year = 1995:2024, country = "ENG", tier = "2nd", gender = "M")
+
+
+league_tables <- fb_
