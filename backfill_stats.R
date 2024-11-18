@@ -1,5 +1,5 @@
 # Install required package (if not installed)
-# devtools::install_github("JaseZiv/worldfootballR")
+devtools::install_github("JaseZiv/worldfootballR")
 
 # Load required libraries
 library(worldfootballR)
@@ -47,7 +47,7 @@ download_league_season_data <- function(country, gender, season_end_year, tier, 
 }
 
 # Function to download and save match-level data
-download_match_level_data <- function(country, gender, season_end_year, tier, quick_scrape = TRUE, load_match_stats = TRUE) {
+download_match_level_data <- function(country, gender, season_end_year, tier, load_match_stats = TRUE) {
   root <- file.path(data_dir, "raw", "fbref")
   create_dir(root)
 
@@ -55,7 +55,7 @@ download_match_level_data <- function(country, gender, season_end_year, tier, qu
   create_dir(dirname(match_results_file))
 
   if (!file.exists(match_results_file)) {
-    match_results <- if (quick_scrape) load_match_results(season_end_year = season_end_year, country = country, tier = tier, gender = gender) else fb_match_results(season_end_year = season_end_year, country = country, tier = tier, gender = gender)
+    match_results <- fb_match_results(season_end_year = season_end_year, country = country, tier = tier, gender = gender)
     write.csv(match_results, match_results_file, row.names = FALSE)
   }
 
@@ -68,12 +68,12 @@ download_match_level_data <- function(country, gender, season_end_year, tier, qu
       create_dir(dirname(player_file))
 
       if (!file.exists(team_file)) {
-        match_team_stats <- load_fb_advanced_match_stats(country = country, gender = gender, tier = tier, stat_type = stat, team_or_player = "team")
+        match_team_stats <- fb_advanced_match_stats(country = country, gender = gender, tier = tier, stat_type = stat, team_or_player = "team")
         write.csv(match_team_stats, team_file, row.names = FALSE)
       }
 
       if (!file.exists(player_file)) {
-        match_player_stats <- load_fb_advanced_match_stats(country = country, gender = gender, tier = tier, stat_type = stat, team_or_player = "player")
+        match_player_stats <- fb_advanced_match_stats(country = country, gender = gender, tier = tier, stat_type = stat, team_or_player = "player")
         write.csv(match_player_stats, player_file, row.names = FALSE)
       }
     }
@@ -101,7 +101,7 @@ download_team_match_log_data <- function(country, gender, season_end_year, tier)
 
 # Function to download data for all leagues, tiers, and competitions
 download_all_leagues_data <- function(gender, season_years, tiers) {
-  countries <- c("ENG", "ESP", "ITA", "GER", "FRA")
+  countries <- fb_league_countries()
   for (country in countries) {
     for (tier in tiers) {
       for (year in season_years) {
