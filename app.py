@@ -13,23 +13,34 @@ from utils import load_data
 from pathlib import Path
 import plotly.express as px
 import duckdb
+
 data_dir = Path("data/FBRef_parsed/big5")
-db = duckdb.connect(database=':memory:')
+db = duckdb.connect(database=":memory:")
 all_players, all_teams = load_data(data_dir, db)
 
 # ========================================================================
 
 
-
-
 def server(input: Inputs, output: Outputs, session: Session) -> None:
-    ui.input_select("player", "Player:",
-                    choices=all_players)
-    ui.input_select("team", "Team:",
-                    choices=all_teams)
-    ui.input_radio_buttons("choice", "Choice:",choices=["Player","Team"])
-    ui.input_select("table", "Stats:",
-                    choices=["standard", "shooting", "passing", "defense", "playing_time", "possession", "gca", "keepers", "keepers_adv", "misc"])
+    ui.input_select("player", "Player:", choices=all_players)
+    ui.input_select("team", "Team:", choices=all_teams)
+    ui.input_radio_buttons("choice", "Choice:", choices=["Player", "Team"])
+    ui.input_select(
+        "table",
+        "Stats:",
+        choices=[
+            "standard",
+            "shooting",
+            "passing",
+            "defense",
+            "playing_time",
+            "possession",
+            "gca",
+            "keepers",
+            "keepers_adv",
+            "misc",
+        ],
+    )
 
     def _select_data(choice, player, team, table):
         if choice == "Player":
@@ -49,9 +60,13 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
     @reactive.calc
     def wages():
         if input.choice() == "Team":
-            return db.execute(f"SELECT * FROM wages WHERE Team='{input.team()}' ORDER BY Season").fetchdf()
+            return db.execute(
+                f"SELECT * FROM wages WHERE Team='{input.team()}' ORDER BY Season"
+            ).fetchdf()
         else:
-            return db.execute(f"SELECT * FROM wages WHERE Player='{input.player()}' ORDER BY Season").fetchdf()
+            return db.execute(
+                f"SELECT * FROM wages WHERE Player='{input.player()}' ORDER BY Season"
+            ).fetchdf()
 
     # ========================================================================
 
@@ -71,12 +86,30 @@ def server(input: Inputs, output: Outputs, session: Session) -> None:
 
     # ========================================================================
 
-
-
     return None
 
 
-_static_assets = ["Player_files","Player_files/libs/quarto-html/tippy.css","Player_files/libs/quarto-html/quarto-syntax-highlighting.css","Player_files/libs/bootstrap/bootstrap-icons.css","Player_files/libs/bootstrap/bootstrap.min.css","Player_files/libs/quarto-dashboard/datatables.min.css","Player_files/libs/clipboard/clipboard.min.js","Player_files/libs/quarto-html/quarto.js","Player_files/libs/quarto-html/popper.min.js","Player_files/libs/quarto-html/tippy.umd.min.js","Player_files/libs/quarto-html/anchor.min.js","Player_files/libs/bootstrap/bootstrap.min.js","Player_files/libs/quarto-dashboard/quarto-dashboard.js","Player_files/libs/quarto-dashboard/stickythead.js","Player_files/libs/quarto-dashboard/datatables.min.js","Player_files/libs/quarto-dashboard/pdfmake.min.js","Player_files/libs/quarto-dashboard/vfs_fonts.js","Player_files/libs/quarto-dashboard/web-components.js","Player_files/libs/quarto-dashboard/components.js"]
+_static_assets = [
+    "Player_files",
+    "Player_files/libs/quarto-html/tippy.css",
+    "Player_files/libs/quarto-html/quarto-syntax-highlighting.css",
+    "Player_files/libs/bootstrap/bootstrap-icons.css",
+    "Player_files/libs/bootstrap/bootstrap.min.css",
+    "Player_files/libs/quarto-dashboard/datatables.min.css",
+    "Player_files/libs/clipboard/clipboard.min.js",
+    "Player_files/libs/quarto-html/quarto.js",
+    "Player_files/libs/quarto-html/popper.min.js",
+    "Player_files/libs/quarto-html/tippy.umd.min.js",
+    "Player_files/libs/quarto-html/anchor.min.js",
+    "Player_files/libs/bootstrap/bootstrap.min.js",
+    "Player_files/libs/quarto-dashboard/quarto-dashboard.js",
+    "Player_files/libs/quarto-dashboard/stickythead.js",
+    "Player_files/libs/quarto-dashboard/datatables.min.js",
+    "Player_files/libs/quarto-dashboard/pdfmake.min.js",
+    "Player_files/libs/quarto-dashboard/vfs_fonts.js",
+    "Player_files/libs/quarto-dashboard/web-components.js",
+    "Player_files/libs/quarto-dashboard/components.js",
+]
 _static_assets = {"/" + sa: Path(__file__).parent / sa for sa in _static_assets}
 
 app = App(

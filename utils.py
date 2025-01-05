@@ -1,14 +1,14 @@
-
 import pandas as pd
 import duckdb
 from pathlib import Path
+
 
 def load_data(data_dir: Path, db: duckdb.DuckDBPyConnection):
     all_players = set()
     all_teams = set()
     for f in data_dir.iterdir():
         table_name = f.stem
-        if table_name in ['player', 'team']:
+        if table_name in ["player", "team"]:
             sub_tables = [x.stem for x in f.iterdir()]
             for sub_table in sub_tables:
                 df = pd.read_csv(f / f"{sub_table}.csv")
@@ -30,8 +30,8 @@ def load_data(data_dir: Path, db: duckdb.DuckDBPyConnection):
 #     league_1 = "E2"
 #     league_2 = "E3"
 #     conference = "EC"
-# 
-# 
+#
+#
 # def load_historical_data(season: str, league: League):
 #     local_path = Path(f"data/s_{season}_{league}.csv")
 #     url = f"http://www.football-data.co.uk/mmz4281/{season}/{league}.csv"
@@ -46,8 +46,8 @@ def load_data(data_dir: Path, db: duckdb.DuckDBPyConnection):
 #         return None
 #     df["Season"] = season
 #     return df.dropna(axis=1, how='all')
-# 
-# 
+#
+#
 # def load_all_data():
 #     def short_year(x):
 #         return str(x)[-2:]
@@ -59,7 +59,7 @@ def load_data(data_dir: Path, db: duckdb.DuckDBPyConnection):
 #                 yield load_historical_data(season, league.value)
 #             except Exception:
 #                 print(f"Failed for {season} - {league}")
-# 
+#
 # def lineups_to_array(match_lineups: List[MatchLineup]) -> Tuple[jnp.array, jnp.array, jnp.array, jnp.array]:
 #     home_players = []
 #     home_scores = []
@@ -71,8 +71,4 @@ def load_data(data_dir: Path, db: duckdb.DuckDBPyConnection):
 #         home_players.append([p.player_id for p in lineup.home_team.lineup][0:11])
 #         away_players.append([p.player_id for p in lineup.away_team.lineup][0:11])
 #     return jnp.array(home_players), jnp.array(away_players), jnp.array(home_scores), jnp.array(away_scores)
-# 
-
-
-
-
+#

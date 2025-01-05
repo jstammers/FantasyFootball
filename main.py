@@ -1,7 +1,9 @@
-from bayesball.scraper import CompetitionStats, SeasonTeamStats, SeasonPlayerStats
+import shutil
+
 import pandas as pd
 from pathlib import Path
-from collections import defaultdict
+
+from bayesball.config import ADVANCED_MATCH_STATS, SEASON_PLAYER_STATS
 
 data_dir = Path("data/FBRef")
 
@@ -16,16 +18,23 @@ tier = "1st"
 gender = "M"
 
 
-match_results = pd.read_csv(data_dir / "big5"/ "match_results.csv")
+match_results = pd.read_csv(data_dir / "big5" / "match_results.csv")
 
-wages = pd.read_csv(data_dir / "big5"/ "wages.csv")
+wages = pd.read_csv(data_dir / "big5" / "wages.csv")
 
 df_dict = {k.stem: pd.read_csv(k, index_col=0) for k in big5_files}
 
 k = list(df_dict.keys())[0]
 
 stat_dict = {}
-group_mapper = {"Bundesliga": "GER", "La Liga": "ESP", "Ligue 1": "FRA", "Premier League": "ENG", "Serie A": "ITA", "Division 1": "FRA"}
+group_mapper = {
+    "Bundesliga": "GER",
+    "La Liga": "ESP",
+    "Ligue 1": "FRA",
+    "Premier League": "ENG",
+    "Serie A": "ITA",
+    "Division 1": "FRA",
+}
 for key in df_dict.keys():
     year = key.split("_")[0]
     tp = key.split("_")[-1]
@@ -50,7 +59,7 @@ for key in df_dict.keys():
             gdf.to_csv(o / f"{stat_type}.csv", index=False)
 
 
-match_results = pd.read_csv(data_dir / "big5"/ "match_results.csv", index_col=0)
+match_results = pd.read_csv(data_dir / "big5" / "match_results.csv", index_col=0)
 
 for k, mdf in match_results.groupby(["Country", "Season_End_Year"]):
     country, year = k
@@ -86,7 +95,55 @@ for f in t1_dir.iterdir():
     df.to_csv(o / f"{stat_type}.csv", index=False)
 
 
-
 data_dir = Path("data/raw/wordfootballr_data")
 
 
+input_dir = Path("data/raw")
+output_dir = Path("data/ingest/fbref")
+
+base = "advanced_match_stats"
+
+
+for stat in ADVANCED_MATCH_STATS:
+    base = "advanced_match_stats"
+    input_files = list(input_dir.glob(f"*{stat}*{base}.csv"))
+    for f in input_files:
+        if "player" in f.name:
+            output_file = output_dir / base / "player" / stat / f.name.replace(f"_{base}", "").replace("_player", "").replace(f"_{stat}", "")
+        elif "team" in f.name:
+            output_file = output_dir / base / "team" / stat / f.name.replace(f"_{base}", "").replace("_team", "").replace(f"_{stat}", "")
+        else:
+            output_file = output_dir / base / f.name
+        # output_file = output_dir / base / f.name.replace(f"_{base}", "")
+        output_file = output_file.with_name(output_file.name[:-4] + "_fb_0001.csv")
+        print(output_file)
+        shutil.copy(f, output_file)
+
+for stat in SEASON_PLAYER_STATS:
+    base = "season_player_stats"
+    input_files = list(input_dir.glob(f"*{stat}*{base}.csv"))
+    for f in input_files:
+        output_file = output_dir / base / stat / f.name.replace(f"_{base}", "").replace("_player", "").replace(f"_{stat}", "")
+        output_file = output_file.with_name(output_file.name[:-4] + "_fb_0001.csv")
+        print(output_file)
+        # shutil.copy(f, output_file)
+
+input_dir = Path("data/ingest/fbref")
+
+files = list(input_dir.glob("**/*_fbref.csv"))
+
+for team_player in ["team", "player"]:
+    for stat in SEASON_PLAYER_STATS + SEASON_TEAM_STATS:
+        files = list(input_dir.glob(f"season_stats/{team_player}/*{stat}.csv"))
+        for f in files:
+            new_file = f.parent / stat / f.name.replace(stat, "fbref_0001")
+            print(new_file)
+            if not new_file.parent.exists():
+                new_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(f, new_file)
+
+
+for f in input_dir.glob("**/*fb_*.csv"):
+    new_name = f.name.replace("fb_", "fbref_")
+    new_file = f.with_name(new_name)
+    shutil.move(f, new_file)
