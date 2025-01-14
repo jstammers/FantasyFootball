@@ -21,11 +21,14 @@ from bayesball.config import ADVANCED_MATCH_STATS, COUNTRIES, TIERS
 BASE_DIR = "data/ingest/fbref"
 SOURCE_SUFFIX = "wf"
 
+
 def download_and_save_file(
-        base_url, country, tier, gender, file_suffix, output_dir, reload=False, schema=None
+    base_url, country, tier, gender, file_suffix, output_dir, reload=False, schema=None
 ):
     url = f"{base_url}/{country}_{gender}_{tier}_{file_suffix}.csv"
-    maybe_download_file(url, output_dir, reload=reload, filename=f"{country}_{tier}_{file_suffix}.csv")
+    maybe_download_file(
+        url, output_dir, reload=reload, filename=f"{country}_{tier}_{file_suffix}.csv"
+    )
     if schema is not None:
         fpath = os.path.join(output_dir, f"{country}_{tier}_{file_suffix}.csv")
         df = pd.read_csv(fpath)
@@ -53,13 +56,24 @@ def ingest_match_data(data_type, file_suffix, output_dir=None):
                 reload=True,
             )
 
+
 @pa.check_types
 def ingest_match_summary_wf():
-    ingest_match_data("fb_match_summary", f"match_summary_{SOURCE_SUFFIX}", output_dir="match_summary", schema=MatchSummarySchema)
+    ingest_match_data(
+        "fb_match_summary",
+        f"match_summary_{SOURCE_SUFFIX}",
+        output_dir="match_summary",
+        schema=MatchSummarySchema,
+    )
+
 
 def ingest_match_shooting_wf():
-    ingest_match_data("fb_match_shooting", f"match_shooting_{SOURCE_SUFFIX}",
-                      output_dir="match_shooting", schema=MatchShootingSchema)
+    ingest_match_data(
+        "fb_match_shooting",
+        f"match_shooting_{SOURCE_SUFFIX}",
+        output_dir="match_shooting",
+        schema=MatchShootingSchema,
+    )
 
 
 def ingest_competitions():
@@ -71,11 +85,15 @@ def ingest_competitions():
     competitions.to_csv(os.path.join(output_dir, "competitions.csv"), index=False)
     log.info("Saved competitions.csv")
 
+
 def read_match_results(filepath) -> pd.DataFrame:
     df = read_rds(filepath)
-    df["Date"] = pd.to_datetime(df["Date"],origin="1970-01-01",unit="D")
+    df["Date"] = pd.to_datetime(df["Date"], origin="1970-01-01", unit="D")
     df = df[(MatchResultsSchema.columns.keys())]
+    if "USA" in filepath:
+        df["MatchURL"] = df["MatchURL"].str.replace("Sporting-KC", "Sporting-Kansas-City")
     return df
+
 
 def ingest_match_results():
     setup_logging()
@@ -88,7 +106,10 @@ def ingest_match_results():
             maybe_download_file(url, td)
             df = read_match_results(os.path.join(td, f"{country}_match_results.rds"))
             df.to_csv(
-                os.path.join(output_dir, f"{country}_match_results_{SOURCE_SUFFIX}.csv"), index=False
+                os.path.join(
+                    output_dir, f"{country}_match_results_{SOURCE_SUFFIX}.csv"
+                ),
+                index=False,
             )
             log.info(f"Saved {country}_match_results.csv")
 
@@ -107,5 +128,6 @@ def ingest_advanced_match_stats_wf():
                         BASE_DIR, f"advanced_match_stats/{team_player}/{stat}"
                     )
                     out_path = f"{country}_{gender}_{tier}_{SOURCE_SUFFIX}.csv"
-                    maybe_download_file(url, data_dir=output_dir, filename=out_path,
-                                        reload=True)
+                    maybe_download_file(
+                        url, data_dir=output_dir, filename=out_path, reload=True
+                    )

@@ -1,7 +1,12 @@
 import pandas as pd
 import polars as pl
 from pathlib import Path
-from bayesball.config import ADVANCED_MATCH_STATS, SEASON_PLAYER_STATS, SEASON_TEAM_STATS
+from bayesball.config import (
+    ADVANCED_MATCH_STATS,
+    SEASON_PLAYER_STATS,
+    SEASON_TEAM_STATS,
+)
+
 schema_dict = {}
 
 for team_player in ["team", "player"]:
@@ -39,4 +44,3 @@ d = {}
 for key, c in schema_dict.items():
     sorted(c, key=lambda x: len(x))
     d[key] = c[0]
-

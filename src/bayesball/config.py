@@ -50,4 +50,17 @@ TIERS = {
     "USA": ["1st"],
 }
 
-MIN_SEASON_END_YEAR = 2017
+LEAGUE_STATS = [
+    {"Country": "ENG", "Tier": "1st", "Min_Advanced_Season": 2018},
+    {"Country": "GER", "Tier": "1st", "Min_Advanced_Season": 2018},
+    {"Country": "ITA", "Tier": "1st", "Min_Advanced_Season": 2018},
+    {"Country": "FRA", "Tier": "1st", "Min_Advanced_Season": 2018},
+    {"Country": "ESP", "Tier": "1st", "Min_Advanced_Season": 2018},
+    {"Country": "USA", "Tier": "1st", "Min_Advanced_Season": 2018},
+    {"Country": "ENG", "Tier": "2nd", "Min_Advanced_Season": 2019},
+    {"Country": "ENG", "Tier": "3rd", "Min_Advanced_Season": None},
+    {"Country": "ENG", "Tier": "4th", "Min_Advanced_Season": None},
+    {"Country": "ENG", "Tier": "5th", "Min_Advanced_Season": None},
+]
+
+MIN_SEASON_END_YEAR = 2018

@@ -8,7 +8,7 @@ MatchSummarySchema = pa.DataFrameSchema(
         "MatchURL": pa.Column(str),
         "League": pa.Column(str),
         "Match_Date": pa.Column(pa.Date),
-        "Matchweek": pa.Column(int),
+        "Matchweek": pa.Column(str),
         "Home_Team": pa.Column(str),
         "Home_Formation": pa.Column(str),
         "Home_Score": pa.Column(int),

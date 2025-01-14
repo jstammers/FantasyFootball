@@ -3,12 +3,12 @@ import os
 import time
 from urllib import request
 from pathlib import Path
-
+from rich.logging import RichHandler
 import polars as pl
 import toml
 
 import rpy2.robjects as robjects
-from rpy2.robjects import pandas2ri
+from rpy2.robjects import pandas2ri, r
 
 pandas2ri.activate()
 
@@ -36,7 +36,7 @@ def maybe_download_file(url, data_dir, filename=None, time_pause=3, reload=False
     if not filename.exists() or reload:
         filename.parent.mkdir(parents=True, exist_ok=True)
         try:
-            log.info(f"Downloading {url}")
+            log.debug(f"Downloading {url} to {filename}")
             request.urlretrieve(url, filename)
             time.sleep(time_pause)
         except Exception as e:
@@ -69,7 +69,7 @@ def read_rds(rds_file):
 
 def setup_logging():
     """Setup logging for the ingest module"""
-    log.basicConfig(level=log.INFO)
+    log.basicConfig(level=log.INFO, handlers=[RichHandler()])
 
 
 def get_config():
@@ -82,3 +82,30 @@ def create_output_dir(base_dir, sub_dir):
     output_dir = os.path.join(base_dir, sub_dir)
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
+
+
+def r_to_python(r_obj):
+    """Convert R object to Python object"""
+    try:
+        r('''
+        unnest_list_columns <- function(df) {
+            df <- tidyr::unnest(df, where(is.list), keep_empty = TRUE)
+            return(df)
+        }
+        ''')
+        r_obj = r.unnest_list_columns(r_obj)
+        res = pandas2ri.rpy2py(r_obj)
+
+
+        for c in res.columns:
+            if res[c].dtype == "object":
+                res[c] = res[c].str.replace("NA_character_", "")
+        # if "MatchURL" in res.columns:
+        #     if "Game_URL" in res.columns:
+        #         res["MatchURL"] = res["Game_URL"]
+        #     else:
+        #         raise ValueError("URL not found")
+        return pl.DataFrame(res)
+    except Exception as e:
+        # convert to list
+        return r_obj

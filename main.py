@@ -109,9 +109,25 @@ for stat in ADVANCED_MATCH_STATS:
     input_files = list(input_dir.glob(f"*{stat}*{base}.csv"))
     for f in input_files:
         if "player" in f.name:
-            output_file = output_dir / base / "player" / stat / f.name.replace(f"_{base}", "").replace("_player", "").replace(f"_{stat}", "")
+            output_file = (
+                output_dir
+                / base
+                / "player"
+                / stat
+                / f.name.replace(f"_{base}", "")
+                .replace("_player", "")
+                .replace(f"_{stat}", "")
+            )
         elif "team" in f.name:
-            output_file = output_dir / base / "team" / stat / f.name.replace(f"_{base}", "").replace("_team", "").replace(f"_{stat}", "")
+            output_file = (
+                output_dir
+                / base
+                / "team"
+                / stat
+                / f.name.replace(f"_{base}", "")
+                .replace("_team", "")
+                .replace(f"_{stat}", "")
+            )
         else:
             output_file = output_dir / base / f.name
         # output_file = output_dir / base / f.name.replace(f"_{base}", "")
@@ -123,7 +139,14 @@ for stat in SEASON_PLAYER_STATS:
     base = "season_player_stats"
     input_files = list(input_dir.glob(f"*{stat}*{base}.csv"))
     for f in input_files:
-        output_file = output_dir / base / stat / f.name.replace(f"_{base}", "").replace("_player", "").replace(f"_{stat}", "")
+        output_file = (
+            output_dir
+            / base
+            / stat
+            / f.name.replace(f"_{base}", "")
+            .replace("_player", "")
+            .replace(f"_{stat}", "")
+        )
         output_file = output_file.with_name(output_file.name[:-4] + "_fb_0001.csv")
         print(output_file)
         # shutil.copy(f, output_file)

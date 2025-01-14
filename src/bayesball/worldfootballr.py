@@ -4,7 +4,6 @@ from typing import Callable
 
 from rpy2.robjects.packages import importr
 import rpy2.robjects as ro
-from rpy2.robjects import pandas2ri
 import os
 
 # import pandas as pd
@@ -14,7 +13,7 @@ from pathlib import Path
 import logging
 from rich.logging import RichHandler
 
-from bayesball.utils import maybe_download_file
+from bayesball.utils import r_to_python, maybe_download_file
 
 LOGFORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOGFORMAT_RICH = "%(message)s"
@@ -22,7 +21,7 @@ LOGFORMAT_RICH = "%(message)s"
 rh = RichHandler()
 rh.setFormatter(logging.Formatter(LOGFORMAT_RICH))
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.ERROR,
     format=LOGFORMAT,
     handlers=[
         rh,
@@ -75,15 +74,6 @@ team_match_stats = [
 ]
 
 
-def _r_to_python(r_obj):
-    """Convert R object to Python object"""
-    res = pandas2ri.rpy2py(r_obj)
-    for c in res.columns:
-        if res[c].dtype == "object":
-            res[c] = res[c].str.replace("NA_character_", "")
-    return pl.DataFrame(res)
-
-
 def replace_none_with_na(value, expected_type="logical"):
     """Replace None with NA in R"""
     if value is None:
@@ -107,7 +97,7 @@ def _call_r_func(r_func, *args, **kwargs) -> pl.DataFrame:
         args_no_url = tuple(arg for arg in args if not isinstance(arg, list))
         kwargs_no_url = {k: v for k, v in kwargs.items() if not isinstance(v, list)}
         result = r_func(*args, **kwargs)
-        result = _r_to_python(result)
+        result = r_to_python(result)
         return result
     except Exception as e:
         print(f"An error occurred while calling '{r_func}': {e}")
@@ -405,15 +395,15 @@ class FootballDataLoader:
         team_stats = {}
         for i, stat_type in enumerate(team_match_stats):
             try:
-                team_stats[stat_type] = _r_to_python(match_data[0][2 * i])
-                player_stats[stat_type] = _r_to_python(match_data[0][2 * i + 1])
+                team_stats[stat_type] = r_to_python(match_data[0][2 * i])
+                player_stats[stat_type] = r_to_python(match_data[0][2 * i + 1])
             except IndexError:
                 LOGGER.error(f"Error loading {stat_type}")
                 continue
 
-        shooting_data = _r_to_python(match_data[1])
-        lineups = _r_to_python(match_data[2])
-        match_summaries = _r_to_python(match_data[3])
+        shooting_data = r_to_python(match_data[1])
+        lineups = r_to_python(match_data[2])
+        match_summaries = r_to_python(match_data[3])
 
         self._update_data(
             match_summaries_filename,
