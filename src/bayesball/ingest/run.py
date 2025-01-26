@@ -20,15 +20,16 @@ from bayesball.ingest.fbref import (
 
 def main(
     fb: bool = True,
-    wf: bool = True,
+    wf: bool = False,
     backfill_wf: bool = False,
     update_current_season: bool = False,
     backfill_season_stats: bool = False,
 ):
     if wf:
+        ingest_competitions()
         ingest_advanced_match_stats_wf()
         ingest_match_results()
-        ingest_competitions()
+
     if backfill_wf:
         ingest_match_shooting_wf()
         ingest_match_summary_wf()

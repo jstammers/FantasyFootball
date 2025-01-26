@@ -5,6 +5,7 @@ authors = [{name = "jstammers", email = "jimmy.stammers@gmail.com"}]
 readme = "README.md"
 description = "A library for analysing football stats"
 dependencies = [
+    "altair>=5.5.0",
     "beautifulsoup4>=4.12.3",
     "ibis-framework[duckdb]>=9.5.0",
     "lxml>=5.3.0",

@@ -18,6 +18,7 @@ from bayesball.schema import MatchSummarySchema, MatchResultsSchema, MatchShooti
 
 from bayesball.config import ADVANCED_MATCH_STATS, COUNTRIES, TIERS
 
+from rich.progress import Progress
 BASE_DIR = "data/ingest/fbref"
 SOURCE_SUFFIX = "wf"
 
@@ -38,23 +39,29 @@ def download_and_save_file(
 
 def ingest_match_data(data_type, file_suffix, output_dir=None):
     setup_logging()
+    log.info(f"Ingesting {data_type}")
     if output_dir is None:
         output_dir = data_type
     output_dir = create_output_dir(BASE_DIR, output_dir)
     gender = "M"
 
-    for country in COUNTRIES:
-        tiers = TIERS.get(country, ["1st"])
-        for tier in tiers:
-            download_and_save_file(
-                f"https://github.com/JaseZiv/worldfootballR_data/releases/download/{data_type}",
-                country,
-                tier,
-                gender,
-                file_suffix,
-                output_dir,
-                reload=True,
-            )
+    with Progress() as progress:
+        country_task = progress.add_task(f"[red]Ingesting {data_type}", total=len(COUNTRIES) * len(TIERS))
+        for country in COUNTRIES:
+            tiers = TIERS.get(country, ["1st"])
+            tier_task = progress.add_task(f"Country: {country}", total=len(tiers))
+            for tier in tiers:
+                download_and_save_file(
+                    f"https://github.com/JaseZiv/worldfootballR_data/releases/download/{data_type}",
+                    country,
+                    tier,
+                    gender,
+                    file_suffix,
+                    output_dir,
+                    reload=True,
+                )
+                progress.update(tier_task, advance=1)
+            progress.update(country_task, advance=1)
 
 
 @pa.check_types
@@ -78,6 +85,7 @@ def ingest_match_shooting_wf():
 
 def ingest_competitions():
     setup_logging()
+    log.info("Ingesting competitions")
     output_dir = create_output_dir(BASE_DIR, "")
 
     url = "https://raw.githubusercontent.com/JaseZiv/worldfootballR_data/master/raw-data/all_leages_and_cups/all_competitions.csv"
@@ -97,13 +105,14 @@ def read_match_results(filepath) -> pd.DataFrame:
 
 def ingest_match_results():
     setup_logging()
+    log.info("Ingesting match results")
     output_dir = create_output_dir(BASE_DIR, "match_results")
 
     with tempfile.TemporaryDirectory() as td:
         for country in COUNTRIES:
             url = f"https://github.com/JaseZiv/worldfootballR_data/releases/download/match_results/{country}_match_results.rds"
             log.info(f"Downloading {url}")
-            maybe_download_file(url, td)
+            maybe_download_file(url, td, reload=True)
             df = read_match_results(os.path.join(td, f"{country}_match_results.rds"))
             df.to_csv(
                 os.path.join(
@@ -116,18 +125,28 @@ def ingest_match_results():
 
 def ingest_advanced_match_stats_wf():
     setup_logging()
+    log.info("Ingesting advanced match stats")
     gender = "M"
+    with Progress() as progress:
+        country_task = progress.add_task("[red]Ingesting countries", total=len(COUNTRIES))
+        stat_task = progress.add_task("[blue]Ingesting advanced match stats", total=len(ADVANCED_MATCH_STATS) * 2)
+        for country in COUNTRIES:
+            tiers = TIERS.get(country, ["1st"])
+            tier_task = progress.add_task(f"Country: {country}", total=len(tiers))
+            for tier in tiers:
+                for stat in ADVANCED_MATCH_STATS:
+                    for team_player in ["team", "player"]:
+                        url = f"https://github.com/JaseZiv/worldfootballR_data/releases/download/fb_advanced_match_stats/{country}_{gender}_{tier}_{stat}_{team_player}_advanced_match_stats.csv"
+                        output_dir = create_output_dir(
+                            BASE_DIR, f"advanced_match_stats/{team_player}/{stat}"
+                        )
+                        out_path = f"{country}_{gender}_{tier}_{SOURCE_SUFFIX}.csv"
+                        maybe_download_file(
+                            url, data_dir=output_dir, filename=out_path, reload=True
+                        )
+                        progress.update(stat_task, advance=1)
+                progress.update(tier_task, advance=1)
+                progress.update(stat_task, completed=0)
+            progress.update(country_task, advance=1)
+            progress.update(tier_task, completed=0)
 
-    for country in COUNTRIES:
-        tiers = TIERS.get(country, ["1st"])
-        for tier in tiers:
-            for stat in ADVANCED_MATCH_STATS:
-                for team_player in ["team", "player"]:
-                    url = f"https://github.com/JaseZiv/worldfootballR_data/releases/download/fb_advanced_match_stats/{country}_{gender}_{tier}_{stat}_{team_player}_advanced_match_stats.csv"
-                    output_dir = create_output_dir(
-                        BASE_DIR, f"advanced_match_stats/{team_player}/{stat}"
-                    )
-                    out_path = f"{country}_{gender}_{tier}_{SOURCE_SUFFIX}.csv"
-                    maybe_download_file(
-                        url, data_dir=output_dir, filename=out_path, reload=True
-                    )
