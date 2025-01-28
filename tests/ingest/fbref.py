@@ -23,3 +23,10 @@ def test_ingest_advanced_match_stats_fb():
 #     assert "Season_End_Year" in summaries.columns
 #     assert "MatchURL" in summaries.columns
 #     assert "Gender" in summaries.columns
+
+
+def test_ingest_advanced_stats_team_player_split():
+    f = "../data/Aston-Villa-Brentford-December-4-2024-Premier-League.html"
+    download_paths = [f]
+    data = extract_match_data(download_paths, advanced_stats=True, base_dir="../data")
+    assert data.team_stats.defense != data.player_stats.defense

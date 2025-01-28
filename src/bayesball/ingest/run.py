@@ -41,7 +41,7 @@ def main(
         scrape_matches(missing_matches)
         match_stats = get_match_stats(missing_matches)
         ingest_advanced_match_stats_fb(
-            missing_matches, match_stats.player_stats, match_stats.player_stats
+            missing_matches, match_stats.player_stats, match_stats.team_stats
         )
         ingest_match_summary_fb(missing_matches, match_stats.match_summary)
         ingest_match_shooting_fb(missing_matches, match_stats.shooting_data)

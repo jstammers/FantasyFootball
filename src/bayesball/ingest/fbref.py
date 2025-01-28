@@ -36,7 +36,14 @@ GENDER = "M"
 
 
 def get_missing_matches(gender=GENDER) -> pl.DataFrame:
-    match_summaries = pl.read_csv(Path(BASE_DIR) / "match_summary" / "*.csv")
+    # match_summaries = pl.read_csv(Path(BASE_DIR) / "match_summary" / "*.csv")
+    match_summaries = pl.concat(
+        [
+            pl.read_csv(x)
+            for x in (Path(BASE_DIR) / "match_summary").glob("*.csv")
+        ],
+        how="diagonal_relaxed",
+    )
     match_shooting = pl.concat(
         [
             pl.read_csv(x)
@@ -320,7 +327,7 @@ def ingest_match_summary_fb(
     match_df = missing_matches[
         ["MatchURL", "Country", "Tier", "Season_End_Year", "Gender"]
     ]
-    summary_joined = match_summaries.join(match_df, on="MatchURL", how="left")
+    summary_joined = match_summaries.join(match_df, on="MatchURL", how="left").drop("Country_right", "Tier_right", "Season_End_Year_right", "Gender_right")
     shooting_parts = summary_joined.partition_by(
         ["Country", "Gender", "Tier"], as_dict=True
     )
@@ -353,6 +360,8 @@ def ingest_advanced_match_stats_fb(
         ):
             if df is None:
                 continue
+            if team_player == "team" and "Player" in df.columns and stat_type != 'keeper':
+                raise ValueError("Player column in team stats")
             df_joined = df.with_columns(
                 match_id=pl.col("MatchURL").str.split("/").list[-2]).drop(
                 "MatchURL").join(match_df, on="match_id", how="left").drop("match_id")
@@ -412,9 +421,9 @@ def stage_new_results():
 
 if __name__ == "__main__":
     scrape_matches()
-    # ingest_advanced_match_stats_fb()
+    ingest_advanced_match_stats_fb()
     # ingest_season_stats()
-    # ingest_match_summary_fb()
-    # ingest_match_shooting_fb()
+    ingest_match_summary_fb()
+    ingest_match_shooting_fb()
     # ingest_wages()
     # stage_new_results()
