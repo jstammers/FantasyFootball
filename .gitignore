@@ -4,3 +4,7 @@ data/*
 .idea/*
 *.log
 **/*.egg-info
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
