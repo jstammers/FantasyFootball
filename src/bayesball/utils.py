@@ -7,13 +7,6 @@ from pathlib import Path
 import polars as pl
 import toml
 
-import rpy2.robjects as robjects
-from rpy2.robjects import pandas2ri
-
-pandas2ri.activate()
-
-readRDS = robjects.r["readRDS"]
-
 
 def get_current_season():
     """Return the current season based on the current date"""
@@ -62,9 +55,16 @@ def maybe_split_csv(data_path, data_dir, file_name):
 
 
 def read_rds(rds_file):
-    """Read an RDS file and return a pandas DataFrame"""
-    rds_df = readRDS(str(rds_file))
-    return pandas2ri.rpy2py(rds_df)
+    """
+    Read an RDS file and return a polars DataFrame
+    
+    Note: This function now raises NotImplementedError as RDS support
+    has been removed. Users should use CSV files instead.
+    """
+    raise NotImplementedError(
+        "RDS file reading is no longer supported after removing rpy2 dependency. "
+        "Please convert RDS files to CSV format or use direct FBRef scraping."
+    )
 
 
 def setup_logging():

@@ -72,25 +72,36 @@ def ingest_competitions():
     log.info("Saved competitions.csv")
 
 def read_match_results(filepath) -> pd.DataFrame:
-    df = read_rds(filepath)
-    df["Date"] = pd.to_datetime(df["Date"],origin="1970-01-01",unit="D")
-    df = df[(MatchResultsSchema.columns.keys())]
+    """
+    Read match results from CSV file
+    
+    Note: RDS support has been removed. This function now expects CSV files.
+    """
+    if filepath.endswith('.rds'):
+        raise NotImplementedError(
+            "RDS file reading is no longer supported. "
+            "Please use CSV files or convert RDS to CSV manually."
+        )
+    df = pd.read_csv(filepath)
+    df["Date"] = pd.to_datetime(df["Date"])
+    df = df[[col for col in MatchResultsSchema.columns.keys() if col in df.columns]]
     return df
 
 def ingest_match_results():
     setup_logging()
     output_dir = create_output_dir(BASE_DIR, "match_results")
 
-    with tempfile.TemporaryDirectory() as td:
-        for country in COUNTRIES:
-            url = f"https://github.com/JaseZiv/worldfootballR_data/releases/download/match_results/{country}_match_results.rds"
-            log.info(f"Downloading {url}")
-            maybe_download_file(url, td)
-            df = read_match_results(os.path.join(td, f"{country}_match_results.rds"))
-            df.to_csv(
-                os.path.join(output_dir, f"{country}_match_results_{SOURCE_SUFFIX}.csv"), index=False
-            )
+    for country in COUNTRIES:
+        # Try CSV first (preferred)
+        csv_url = f"https://github.com/JaseZiv/worldfootballR_data/releases/download/match_results/{country}_match_results.csv"
+        try:
+            log.info(f"Downloading {csv_url}")
+            csv_path = os.path.join(output_dir, f"{country}_match_results_{SOURCE_SUFFIX}.csv")
+            maybe_download_file(csv_url, output_dir, filename=f"{country}_match_results_{SOURCE_SUFFIX}.csv")
             log.info(f"Saved {country}_match_results.csv")
+        except Exception as e:
+            log.error(f"Error downloading CSV for {country}: {e}")
+            log.info(f"RDS format is no longer supported. Consider using Python FBRef scraper instead.")
 
 
 def ingest_advanced_match_stats_wf():
