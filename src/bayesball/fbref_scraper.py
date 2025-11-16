@@ -91,8 +91,8 @@ def parse_table_to_polars(table) -> pl.DataFrame:
     tbody = table.find('tbody')
     if tbody:
         for tr in tbody.find_all('tr'):
-            # Skip header rows within tbody
-            if tr.find('th', class_='thead'):
+            # Skip header rows within tbody (rows with class 'thead' or containing th with class 'thead')
+            if 'thead' in tr.get('class', []) or tr.find('th', class_='thead'):
                 continue
             
             row_data = []
