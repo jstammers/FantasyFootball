@@ -1,14 +1,25 @@
 [project]
 name = "fantasyfootball"
 version = "0.1.0"
-authors = ["jstammers <jimmy.stammers@gmail.com>"]
+authors = [{name = "jstammers", email = "jimmy.stammers@gmail.com"}]
 readme = "README.md"
 description = "A library for analysing football stats"
 dependencies = [
+    "beautifulsoup4>=4.12.3",
+    "ibis-framework[duckdb]>=9.5.0",
+    "lxml>=5.3.0",
+    "pandera>=0.21.1",
+    "polars>=1.16.0",
+    "pydantic>=2.9.2",
     "pymc>=5.18.0",
+    "rich>=13.9.4",
+    "rpy2-arrow>=0.1.2",
     "rpy2>=3.5.16",
     "shiny>=1.2.0",
     "shinywidgets>=0.3.4",
+    "toml>=0.10.2",
+    "tqdm>=4.67.1",
+    "typer>=0.15.1",
 ]
 
 [tool.poetry.dependencies]
@@ -30,7 +41,8 @@ dev-dependencies = [
     "pytest>=8.3.3",
     "quarto>=0.1.0",
 ]
+package = true
 
-#
-#[build-system]
 
+[project.scripts]
+bb = "bayesball.cli:app"
