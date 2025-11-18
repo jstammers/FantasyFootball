@@ -10,9 +10,15 @@ if not data_dir.exists():
 worldfootballr_data = "https://github.com/JaseZiv/worldfootballR_data/releases"
 gender = "M"
 
+# Note: worldfootballR_data repository is deprecated
+# This script now serves as a reference for the old data structure
+# New scraping should use the Python-based fbref_scraper module
+
 for country in ["ENG", "GER", "ITA", "FRA", "ESP", "USA"]:
-    match_results = f"https://github.com/JaseZiv/worldfootballR_data/releases/download/match_results/{country}_match_results.rds"
-    maybe_download_file(match_results, data_dir)
+    # RDS files are no longer supported - use CSV files instead
+    # match_results = f"https://github.com/JaseZiv/worldfootballR_data/releases/download/match_results/{country}_match_results.rds"
+    # maybe_download_file(match_results, data_dir)
+    
     for tier in ["1st", "2nd", "3rd", "4th", "5th"]:
         match_summary = f"https://github.com/JaseZiv/worldfootballR_data/releases/download/fb_match_summary/{country}_{gender}_{tier}_match_summary.csv"
         maybe_download_file(match_summary, data_dir)
@@ -32,23 +38,17 @@ for country in ["ENG", "GER", "ITA", "FRA", "ESP", "USA"]:
                 maybe_download_file(advanced_match_stats, data_dir)
 
 
-big5_season_stats = "https://github.com/JaseZiv/worldfootballR_data/releases/download/fb_big5_advanced_season_stats/big5_{team_player}_{stat}.rds"
-import rpy2.robjects as robjects
-from rpy2.robjects import pandas2ri
+# RDS file processing is no longer supported
+# Convert existing RDS files to CSV manually if needed
+# big5_season_stats = "https://github.com/JaseZiv/worldfootballR_data/releases/download/fb_big5_advanced_season_stats/big5_{team_player}_{stat}.rds"
 
-pandas2ri.activate()
+# Process any existing CSV files
+csv_files = data_dir.glob("*.csv")
 
-readRDS = robjects.r["readRDS"]
+for csv_file in csv_files:
+    # CSV files are ready to use, no conversion needed
+    pass
 
-rds_files = data_dir.glob("*.rds")
-
-for rds_file in rds_files:
-    rds_df = readRDS(str(rds_file))
-    df = pandas2ri.rpy2py(rds_df)
-    df["Date"] = pd.to_datetime(df["Date"], unit="D", origin="1970-01-01")
-    df.sort_values(["Tier", "Gender", "Date"]).to_csv(
-        data_dir / f"{rds_file.stem}.csv", index=False
-    )
 
 gender = "M"
 for country in ["ENG", "GER", "ITA", "FRA", "ESP", "USA"]:

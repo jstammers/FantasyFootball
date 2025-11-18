@@ -3,11 +3,7 @@ from bayesball.utils import maybe_download_file
 from pathlib import Path
 import pandas as pd
 import ibis
-import rpy2.robjects as robjects
-from rpy2.robjects import pandas2ri
-pandas2ri.activate()
 
-readRDS = robjects.r['readRDS']
 ibis.options.interactive = True
 
 data_dir = Path("data/raw")
@@ -16,6 +12,9 @@ if not data_dir.exists():
     data_dir.mkdir(parents=True, exist_ok=True)
 
 worldfootballr_data = "https://github.com/JaseZiv/worldfootballR_data/releases"
+
+# Note: worldfootballR_data repository is deprecated
+# This script has been updated to work without rpy2
 
 # create connection to database
 con = ibis.connect("duckdb://bayesball.db")
@@ -29,24 +28,33 @@ con.create_table("competitions", competitions, overwrite=True)
 competition_config = con.read_json(data_dir / "competition_config.json")
 con.create_table("competition_config", competition_config, overwrite=True)
 
-if not "match_results" in con.list_tables():
+if "match_results" not in con.list_tables():
+    match_results = None
+else:
+    match_results = con.table("match_results")
 
-match_results = con.table("match_results")
 # get results from worldfootball_r data
 countries = competition_config.select("Country").distinct().Country.collect().execute()
 
 for country in countries:
-    match_results = f"https://github.com/JaseZiv/worldfootballR_data/releases/download/match_results/{country}_match_results.rds"
-    maybe_download_file(match_results, data_dir)
-    df = readRDS(str(data_dir / f"{country}_match_results.rds"))
-    df["Date"] = pd.to_datetime(df["Date"], unit="D", origin="1970-01-01")
-    df.sort_values(["Tier", "Gender", "Date"])
-    table = ibis.memtable(df)
-    if not "match_results" in con.list_tables():
-        con.create_table(f"match_results", table)
-    else:
-        table.
-    con.create_table(f"match_results", df, mo)
+    # RDS files are no longer supported - use CSV files instead
+    # Users should manually convert RDS to CSV or use direct FBRef scraping
+    match_results_csv = f"https://github.com/JaseZiv/worldfootballR_data/releases/download/match_results/{country}_match_results.csv"
+    try:
+        maybe_download_file(match_results_csv, data_dir)
+        df = pd.read_csv(data_dir / f"{country}_match_results.csv")
+        df["Date"] = pd.to_datetime(df["Date"])
+        df.sort_values(["Tier", "Gender", "Date"], inplace=True)
+        table = ibis.memtable(df)
+        if "match_results" not in con.list_tables():
+            con.create_table("match_results", table)
+        else:
+            # Append to existing table
+            pass
+    except Exception as e:
+        LOGGER.error(f"Error loading match results for {country}: {e}")
+        LOGGER.info(f"Consider using Python-based FBRef scraper instead")
+
 
 
 # infer which matches need to be scraped

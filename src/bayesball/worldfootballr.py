@@ -1,13 +1,8 @@
-"""An interface to the worldfootballr R package"""
+"""Football data loader using Python-based FBRef scraper (replaces worldfootballR)"""
 
 from typing import Callable
-
-from rpy2.robjects.packages import importr
-import rpy2.robjects as ro
-from rpy2.robjects import pandas2ri
 import os
 
-# import pandas as pd
 import polars as pl
 from pathlib import Path
 
@@ -15,6 +10,7 @@ import logging
 from rich.logging import RichHandler
 
 from bayesball.utils import maybe_download_file
+from bayesball import fbref_scraper
 
 LOGFORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOGFORMAT_RICH = "%(message)s"
@@ -29,11 +25,6 @@ logging.basicConfig(
     ],
 )
 LOGGER = logging.getLogger(__name__)
-wf = importr("worldfootballR")
-r_source = ro.r["source"]
-match_wf = r_source(str(Path(__file__).parent.parent / "parse_match_pages_2.R"))
-
-fb_parse_match_data = ro.globalenv["fb_parse_match_data"]
 # Define stat types
 
 season_player_stats = [
@@ -75,62 +66,41 @@ team_match_stats = [
 ]
 
 
-def _r_to_python(r_obj):
-    """Convert R object to Python object"""
-    res = pandas2ri.rpy2py(r_obj)
-    for c in res.columns:
-        if res[c].dtype == "object":
-            res[c] = res[c].str.replace("NA_character_", "")
-    return pl.DataFrame(res)
-
-
-def replace_none_with_na(value, expected_type="logical"):
-    """Replace None with NA in R"""
-    if value is None:
-        if expected_type == "character":
-            return ro.NA_Character
-        elif expected_type == "integer":
-            return ro.NA_Integer
-        elif expected_type == "real":
-            return ro.NA_Real
-        else:
-            return ro.NA_Logical
-    else:
-        return value
-
-
-def _call_r_func(r_func, *args, **kwargs) -> pl.DataFrame:
-    try:
-        # Replace None with NA in args and kwargs
-        args = tuple(replace_none_with_na(arg) for arg in args)
-        kwargs = {k: replace_none_with_na(v) for k, v in kwargs.items()}
-        args_no_url = tuple(arg for arg in args if not isinstance(arg, list))
-        kwargs_no_url = {k: v for k, v in kwargs.items() if not isinstance(v, list)}
-        result = r_func(*args, **kwargs)
-        result = _r_to_python(result)
-        return result
-    except Exception as e:
-        print(f"An error occurred while calling '{r_func}': {e}")
-        LOGGER.error(f"An error occurred while calling '{r_func}': {e}")
-        return None
-
-
-def call_match_wf_function(func_name, *args, **kwargs):
-    """Call a function from the match_wf R source"""
-    try:
-        r_func = ro.r[func_name]
-    except AttributeError:
-        raise ValueError(f"Function '{func_name}' not found in source package.")
-    return _call_r_func(r_func, *args, **kwargs)
-
-
 def call_wf_function(func_name, *args, **kwargs):
-    """Call a function from the worldfootballr package"""
+    """
+    Call a scraping function (replaces R worldfootballr calls with Python)
+    
+    Maps worldfootballR function names to Python equivalents
+    """
     try:
-        r_func = getattr(wf, func_name)
-    except AttributeError:
-        raise ValueError(f"Function '{func_name}' not found in worldfootballr package.")
-    return _call_r_func(r_func, *args, **kwargs)
+        if func_name == "fb_league_stats":
+            return fbref_scraper.fb_league_stats(
+                country=kwargs.get('country'),
+                gender=kwargs.get('gender'),
+                season_end_year=kwargs.get('season_end_year'),
+                tier=kwargs.get('tier'),
+                stat_type=kwargs.get('stat_type'),
+                team_or_player=kwargs.get('team_or_player')
+            )
+        elif func_name == "fb_league_urls":
+            return fbref_scraper.fb_league_urls(
+                country=kwargs.get('country'),
+                gender=kwargs.get('gender'),
+                season_end_year=kwargs.get('season_end_year'),
+                tier=kwargs.get('tier')
+            )
+        elif func_name == "fb_teams_urls":
+            league_url = kwargs.get('league_url')
+            if isinstance(league_url, list) and len(league_url) > 0:
+                league_url = league_url[0]
+            return fbref_scraper.fb_teams_urls(league_url=league_url)
+        elif func_name == "fb_squad_wages":
+            return fbref_scraper.fb_squad_wages(team_urls=kwargs.get('team_urls'))
+        else:
+            raise ValueError(f"Function '{func_name}' not implemented in Python scraper")
+    except Exception as e:
+        LOGGER.error(f"An error occurred while calling '{func_name}': {e}")
+        return pl.DataFrame()
 
 
 class FootballDataLoader:
@@ -397,7 +367,7 @@ class FootballDataLoader:
             team_match_stats = ["summary"]
             shooting = False
 
-        match_data = fb_parse_match_data(
+        match_data = fbref_scraper.fb_parse_match_data(
             download_paths, stat_types=team_match_stats, shooting=shooting
         )
 
@@ -405,15 +375,16 @@ class FootballDataLoader:
         team_stats = {}
         for i, stat_type in enumerate(team_match_stats):
             try:
-                team_stats[stat_type] = _r_to_python(match_data[0][2 * i])
-                player_stats[stat_type] = _r_to_python(match_data[0][2 * i + 1])
-            except IndexError:
+                # match_data[0] is a list of [team_df, player_df] pairs
+                team_stats[stat_type] = match_data[0][i][0]
+                player_stats[stat_type] = match_data[0][i][1]
+            except (IndexError, TypeError):
                 LOGGER.error(f"Error loading {stat_type}")
                 continue
 
-        shooting_data = _r_to_python(match_data[1])
-        lineups = _r_to_python(match_data[2])
-        match_summaries = _r_to_python(match_data[3])
+        shooting_data = match_data[1]
+        lineups = match_data[2]
+        match_summaries = match_data[3]
 
         self._update_data(
             match_summaries_filename,
