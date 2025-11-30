@@ -4,3 +4,9 @@ data/*
 .idea/*
 *.log
 **/*.egg-info
+**/__pycache__/*
+.vscode/*
+.DS_Store
+.pytest_cache/*
+.ruff_cache/*
+.venv/

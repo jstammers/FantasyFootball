@@ -19,6 +19,7 @@ from bayesball.schema import MatchSummarySchema, MatchResultsSchema, MatchShooti
 from bayesball.config import ADVANCED_MATCH_STATS, COUNTRIES, TIERS
 
 from rich.progress import Progress
+
 BASE_DIR = "data/ingest/fbref"
 SOURCE_SUFFIX = "wf"
 
@@ -46,7 +47,9 @@ def ingest_match_data(data_type, file_suffix, output_dir=None):
     gender = "M"
 
     with Progress() as progress:
-        country_task = progress.add_task(f"[red]Ingesting {data_type}", total=len(COUNTRIES) * len(TIERS))
+        country_task = progress.add_task(
+            f"[red]Ingesting {data_type}", total=len(COUNTRIES) * len(TIERS)
+        )
         for country in COUNTRIES:
             tiers = TIERS.get(country, ["1st"])
             tier_task = progress.add_task(f"Country: {country}", total=len(tiers))
@@ -99,7 +102,9 @@ def read_match_results(filepath) -> pd.DataFrame:
     df["Date"] = pd.to_datetime(df["Date"], origin="1970-01-01", unit="D")
     df = df[(MatchResultsSchema.columns.keys())]
     if "USA" in filepath:
-        df["MatchURL"] = df["MatchURL"].str.replace("Sporting-KC", "Sporting-Kansas-City")
+        df["MatchURL"] = df["MatchURL"].str.replace(
+            "Sporting-KC", "Sporting-Kansas-City"
+        )
     return df
 
 
@@ -128,8 +133,12 @@ def ingest_advanced_match_stats_wf():
     log.info("Ingesting advanced match stats")
     gender = "M"
     with Progress() as progress:
-        country_task = progress.add_task("[red]Ingesting countries", total=len(COUNTRIES))
-        stat_task = progress.add_task("[blue]Ingesting advanced match stats", total=len(ADVANCED_MATCH_STATS) * 2)
+        country_task = progress.add_task(
+            "[red]Ingesting countries", total=len(COUNTRIES)
+        )
+        stat_task = progress.add_task(
+            "[blue]Ingesting advanced match stats", total=len(ADVANCED_MATCH_STATS) * 2
+        )
         for country in COUNTRIES:
             tiers = TIERS.get(country, ["1st"])
             tier_task = progress.add_task(f"Country: {country}", total=len(tiers))
@@ -149,4 +158,3 @@ def ingest_advanced_match_stats_wf():
                 progress.update(stat_task, completed=0)
             progress.update(country_task, advance=1)
             progress.update(tier_task, completed=0)
-

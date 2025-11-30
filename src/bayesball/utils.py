@@ -87,15 +87,14 @@ def create_output_dir(base_dir, sub_dir):
 def r_to_python(r_obj):
     """Convert R object to Python object"""
     try:
-        r('''
+        r("""
         unnest_list_columns <- function(df) {
             df <- tidyr::unnest(df, where(is.list), keep_empty = TRUE)
             return(df)
         }
-        ''')
+        """)
         r_obj = r.unnest_list_columns(r_obj)
         res = pandas2ri.rpy2py(r_obj)
-
 
         for c in res.columns:
             if res[c].dtype == "object":

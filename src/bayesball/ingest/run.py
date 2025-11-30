@@ -51,6 +51,5 @@ def main(
         stage_new_results()
 
 
-
 if __name__ == "__main__":
     main()

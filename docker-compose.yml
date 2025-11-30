@@ -1,0 +1,19 @@
+services:
+  metaduck:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - MB_DB_FILE=/metabase.db
+      - MB_PLUGINS_DIR=/home/plugins
+      - JAVA_OPTS=-XX:UseSVE=0
+    mem_reservation: 2g
+    volumes:
+      - ./data/metabase.db:/metabase.db
+      - ./data/extract:/container/data
+    command: java -jar -XX:UseSVE=0 /home/metabase.jar
+      #start shell
+#    command:
+#      - "java -jar /home/metabase.jar"

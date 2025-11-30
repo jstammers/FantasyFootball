@@ -36,6 +36,35 @@ ADVANCED_MATCH_STATS = [
     "misc",
 ]
 
+SUMMARY_STATS = [
+    "Gls",
+    "Ast",
+    "PK",
+    "PKatt",
+    "Sh",
+    "SoT",
+    "CrdY",
+    "CrdR",
+    "Touches",
+    "Tkl",
+    "Int",
+    "Blocks",
+    "xG_Expected",
+    "npxG_Expected",
+    "xAG_Expected",
+    "SCA_SCA",
+    "GCA_SCA",
+    "Cmp_Passes",
+    "Att_Passes",
+    "Cmp_percent_Passes",
+    "PrgP_Passes",
+    "Carries_Carries",
+    "PrgC_Carries",
+    "Att_Take_Ons",
+    "Succ_Take_Ons",
+]
+
+
 COUNTRIES = ["ENG", "GER", "ITA", "FRA", "ESP", "USA"]
 TIERS = {
     "ENG": ["1st", "2nd", "3rd", "4th", "5th"],

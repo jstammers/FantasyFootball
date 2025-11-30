@@ -21,6 +21,7 @@ dependencies = [
     "toml>=0.10.2",
     "tqdm>=4.67.1",
     "typer>=0.15.1",
+    "duckdb-engine>=0.15.0",
 ]
 
 [tool.poetry.dependencies]
@@ -38,6 +39,7 @@ plotly = "^5.21.0"
 
 [tool.uv]
 dev-dependencies = [
+    "databricks-cli>=0.18.0",
     "jupyter>=1.1.1",
     "pytest>=8.3.3",
     "quarto>=0.1.0",

@@ -38,10 +38,7 @@ GENDER = "M"
 def get_missing_matches(gender=GENDER) -> pl.DataFrame:
     # match_summaries = pl.read_csv(Path(BASE_DIR) / "match_summary" / "*.csv")
     match_summaries = pl.concat(
-        [
-            pl.read_csv(x)
-            for x in (Path(BASE_DIR) / "match_summary").glob("*.csv")
-        ],
+        [pl.read_csv(x) for x in (Path(BASE_DIR) / "match_summary").glob("*.csv")],
         how="diagonal_relaxed",
     )
     match_shooting = pl.concat(
@@ -58,7 +55,7 @@ def get_missing_matches(gender=GENDER) -> pl.DataFrame:
             pl.read_csv(x).select("MatchURL").unique()
             for x in (
                 Path(BASE_DIR) / "advanced_match_stats" / "team" / "summary"
-        ).glob("*.csv")
+            ).glob("*.csv")
         ],
         how="diagonal_relaxed",
     )
@@ -67,7 +64,7 @@ def get_missing_matches(gender=GENDER) -> pl.DataFrame:
             pl.read_csv(x).select("MatchURL").unique()
             for x in (
                 Path(BASE_DIR) / "advanced_match_stats" / "team" / "possession"
-        ).glob("*.csv")
+            ).glob("*.csv")
         ],
         how="diagonal_relaxed",
     )
@@ -103,20 +100,20 @@ def get_missing_matches(gender=GENDER) -> pl.DataFrame:
         .fill_null(False)
     )
     missing_cond = (
-            ~pl.col("InMatchSummary")
-            | ~pl.col("InTeamSummary")
-            | (
-                    ~pl.col("InTeamAdvanced")
-                    & (pl.col("Season_End_Year") >= pl.col("Min_Advanced_Season"))
-            ).fill_null(False)
+        ~pl.col("InMatchSummary")
+        | ~pl.col("InTeamSummary")
+        | (
+            ~pl.col("InTeamAdvanced")
+            & (pl.col("Season_End_Year") >= pl.col("Min_Advanced_Season"))
+        ).fill_null(False)
     )
     missing_matches = match_results_filtered.filter(missing_cond)
     missing_matches = missing_matches.with_columns(
         filename=pl.lit(f"{STAGE_DIR}/html/")
-                 + pl.col("Country")
-                 + pl.lit("/")
-                 + pl.col("MatchURL").str.split("/").list.last()
-                 + pl.lit(".html")
+        + pl.col("Country")
+        + pl.lit("/")
+        + pl.col("MatchURL").str.split("/").list.last()
+        + pl.lit(".html")
     )
     return missing_matches
 
@@ -192,8 +189,9 @@ def get_match_stats(missing_matches: pl.DataFrame) -> MatchStats:
     return basic_stats if basic_stats else advanced_stats
 
 
-def extract_match_data(download_paths, advanced_stats=True,
-                       base_dir=BASE_DIR) -> MatchStats:
+def extract_match_data(
+    download_paths, advanced_stats=True, base_dir=BASE_DIR
+) -> MatchStats:
     # Define team match stats
     competitions = _get_competitions(base_dir)
     if advanced_stats:
@@ -214,16 +212,22 @@ def extract_match_data(download_paths, advanced_stats=True,
         return None
     if "Competition_Name" not in match_summaries.columns:
         match_summaries = match_summaries.join(
-            competitions.select("Country", "Gender", "Tier",
-                                "Competition_Name").unique(),
-            left_on="League", right_on="Competition_Name", how="left").with_columns(
-            Competition_Name=pl.col("League"))
+            competitions.select(
+                "Country", "Gender", "Tier", "Competition_Name"
+            ).unique(),
+            left_on="League",
+            right_on="Competition_Name",
+            how="left",
+        ).with_columns(Competition_Name=pl.col("League"))
     if "Season_End_Year" not in match_summaries.columns:
-        match_summaries = match_summaries.with_columns(Match_Date=pl.col("Match_Date").cast(pl.Date))
+        match_summaries = match_summaries.with_columns(
+            Match_Date=pl.col("Match_Date").cast(pl.Date)
+        )
         match_summaries = match_summaries.with_columns(
             Season_End_Year=pl.when(pl.col("Match_Date").dt.month() > 6)
             .then(pl.col("Match_Date").dt.year() + 1)
-            .otherwise(pl.col("Match_Date").dt.year()))
+            .otherwise(pl.col("Match_Date").dt.year())
+        )
     MatchSummarySchema.validate(match_summaries.to_pandas())
     match_summaries = match_summaries.select(MatchSummarySchema.columns.keys())
     player_stats = {}
@@ -268,7 +272,7 @@ def scrape_matches(missing_matches: pl.DataFrame, time_pause=4):
             "MatchURL"
         ].to_list()
         log.info(f"Scraping matches for {country}")
-        for url in track(match_urls, description="Scraping matches"):
+        for url in track(match_urls, description="Scraping matches", total=len(match_urls)):
             filename = Path("html") / country / (Path(url).name + ".html")
             maybe_download_file(url, STAGE_DIR, filename, time_pause=time_pause)
 
@@ -284,15 +288,12 @@ def ingest_wages(gender=GENDER, update_current_season=False, base_dir=BASE_DIR):
     )
     for (country, gender, tier, season), part_df in track(league_parts.items()):
         csv_file = f"{country}_{gender}_{tier}_{SOURCE_SUFFIX}_{season}.csv"
-        filename = (
-                Path(BASE_DIR)
-                / "wages"
-                / csv_file
-        )
+        filename = Path(BASE_DIR) / "wages" / csv_file
         if not filename.parent.exists():
             filename.parent.mkdir(parents=True, exist_ok=True)
         if filename.exists() and (
-                (season < get_current_season()) or not update_current_season):
+            (season < get_current_season()) or not update_current_season
+        ):
             continue
         team_urls = call_wf_function(
             "fb_teams_urls", league_url=part_df["seasons_urls"].to_list()[0]
@@ -321,21 +322,23 @@ def ingest_season_stats(update_current_season=False):
 
 
 def ingest_match_summary_fb(
-        missing_matches: pl.DataFrame, match_summaries: pl.DataFrame
+    missing_matches: pl.DataFrame, match_summaries: pl.DataFrame
 ):
     setup_logging()
     match_df = missing_matches[
         ["MatchURL", "Country", "Tier", "Season_End_Year", "Gender"]
     ]
-    summary_joined = match_summaries.join(match_df, on="MatchURL", how="left").drop("Country_right", "Tier_right", "Season_End_Year_right", "Gender_right")
+    summary_joined = match_summaries.join(match_df, on="MatchURL", how="left").drop(
+        "Country_right", "Tier_right", "Season_End_Year_right", "Gender_right"
+    )
     shooting_parts = summary_joined.partition_by(
         ["Country", "Gender", "Tier"], as_dict=True
     )
     for (country, gender, tier), part_df in shooting_parts.items():
         filename = (
-                Path(STAGE_DIR)
-                / "match_summary"
-                / f"{country}_{gender}_{tier}_match_summary_{SOURCE_SUFFIX}.csv"
+            Path(STAGE_DIR)
+            / "match_summary"
+            / f"{country}_{gender}_{tier}_match_summary_{SOURCE_SUFFIX}.csv"
         )
         if not filename.parent.exists():
             filename.parent.mkdir(parents=True, exist_ok=True)
@@ -343,38 +346,45 @@ def ingest_match_summary_fb(
 
 
 def ingest_advanced_match_stats_fb(
-        missing_matches: pl.DataFrame,
-        player_stats: AdvancedMatchStats,
-        team_stats: AdvancedMatchStats,
+    missing_matches: pl.DataFrame,
+    player_stats: AdvancedMatchStats,
+    team_stats: AdvancedMatchStats,
 ):
     setup_logging()
     match_df = missing_matches[
         ["MatchURL", "Country", "Tier", "Season_End_Year", "Gender"]
     ].with_columns(match_id=pl.col("MatchURL").str.split("/").list[-2])
     for team_player, stats in zip(
-            ["team", "player"],
-            [dataclasses.asdict(team_stats), dataclasses.asdict(player_stats)],
+        ["team", "player"],
+        [dataclasses.asdict(team_stats), dataclasses.asdict(player_stats)],
     ):
         for stat_type, df in track(
-                stats.items(), description=f"Ingesting {team_player} stats"
+            stats.items(), description=f"Ingesting {team_player} stats"
         ):
             if df is None:
                 continue
-            if team_player == "team" and "Player" in df.columns and stat_type != 'keeper':
+            if (
+                team_player == "team"
+                and "Player" in df.columns
+                and stat_type != "keeper"
+            ):
                 raise ValueError("Player column in team stats")
-            df_joined = df.with_columns(
-                match_id=pl.col("MatchURL").str.split("/").list[-2]).drop(
-                "MatchURL").join(match_df, on="match_id", how="left").drop("match_id")
+            df_joined = (
+                df.with_columns(match_id=pl.col("MatchURL").str.split("/").list[-2])
+                .drop("MatchURL")
+                .join(match_df, on="match_id", how="left")
+                .drop("match_id")
+            )
             df_parts = df_joined.partition_by(
                 ["Country", "Gender", "Tier"], as_dict=True
             )
             for (country, gender, tier), part_df in df_parts.items():
                 filename = (
-                        Path(STAGE_DIR)
-                        / "advanced_match_stats"
-                        / team_player
-                        / stat_type
-                        / f"{country}_{gender}_{tier}_{SOURCE_SUFFIX}.csv"
+                    Path(STAGE_DIR)
+                    / "advanced_match_stats"
+                    / team_player
+                    / stat_type
+                    / f"{country}_{gender}_{tier}_{SOURCE_SUFFIX}.csv"
                 )
                 if not filename.parent.exists():
                     filename.parent.mkdir(parents=True, exist_ok=True)
@@ -382,7 +392,7 @@ def ingest_advanced_match_stats_fb(
 
 
 def ingest_match_shooting_fb(
-        missing_matches: pl.DataFrame, shooting_data: pl.DataFrame
+    missing_matches: pl.DataFrame, shooting_data: pl.DataFrame
 ):
     setup_logging()
     if shooting_data.shape[0] == 0:
@@ -397,9 +407,9 @@ def ingest_match_shooting_fb(
     )
     for (country, gender, tier), part_df in shooting_parts.items():
         filename = (
-                Path(STAGE_DIR)
-                / "match_shooting"
-                / f"{country}_{gender}_{tier}_match_shooting_{SOURCE_SUFFIX}.csv"
+            Path(STAGE_DIR)
+            / "match_shooting"
+            / f"{country}_{gender}_{tier}_match_shooting_{SOURCE_SUFFIX}.csv"
         )
         if not filename.parent.exists():
             filename.parent.mkdir(parents=True, exist_ok=True)
@@ -411,11 +421,13 @@ def stage_new_results():
     for f in new_files:
         next_path = str(f).replace(STAGE_DIR, BASE_DIR)
         existing_pattern = Path(next_path).with_name(
-            f.name.replace("_fbref", "_fbref_*"))
+            f.name.replace("_fbref", "_fbref_*")
+        )
         # get the maximum 4 digit number in the existing files
         existing_files = len([x for x in Path().glob(str(existing_pattern))]) + 1
         new_name = Path(next_path).with_name(
-            f.name.replace("_fbref", f"_fbref_{existing_files:>04}"))
+            f.name.replace("_fbref", f"_fbref_{existing_files:>04}")
+        )
         shutil.move(f, new_name)
 
 

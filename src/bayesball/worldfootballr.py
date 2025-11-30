@@ -154,15 +154,15 @@ class FootballDataLoader:
         file_path = self._get_file_path(filename)
         assert self.tier in filename.name, f"Tier {self.tier} not in {filename}"
         assert self.gender in filename.name, f"Gender {self.gender}" not in filename
-        assert (
-            self.country in filename.name
-        ), f"Country {self.country} not in {filename}"
+        assert self.country in filename.name, (
+            f"Country {self.country} not in {filename}"
+        )
         if file_path.exists():
             df = pl.read_csv(file_path, infer_schema_length=10000)
             if "Season_End_Year" in df.columns:
                 df = df.filter(pl.col("Season_End_Year") == self.season)
             elif "url" in df.columns:
-                season_url = f"{self.season- 1}-{self.season}"
+                season_url = f"{self.season - 1}-{self.season}"
                 df = df.filter(pl.col("url").str.contains(season_url))
             else:
                 raise ValueError(f"Season_End_Year or url not in {file_path}")
